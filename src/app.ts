@@ -17,6 +17,6 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/api', orderRouters);
+app.use('/api/orders', orderRouters);
 
 export default app;
