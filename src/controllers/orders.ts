@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import OrderModel from '../models/order';
-import { NumberSchemaDefinition, isValidObjectId } from 'mongoose';
+import { isValidObjectId } from 'mongoose';
 import createHttpError from 'http-errors';
 
 export const getAllOrders: RequestHandler = async (req, res, next) => {
@@ -60,8 +60,7 @@ export const createOrder: RequestHandler<unknown, unknown, createOrderBody, unkn
     // do the price calculation here (quant * unitprice)
 
     try {
-        if (!customerName || listOfProducts.length === 0)
-            throw createHttpError(400, 'Invalid input, information is missing');
+        if (!customerName) throw createHttpError(400, 'Invalid input, information is missing');
 
         const newOrder = await OrderModel.create({
             customerName,
@@ -78,11 +77,70 @@ export const createOrder: RequestHandler<unknown, unknown, createOrderBody, unkn
     }
 };
 
-export const updateOrder: RequestHandler = async (req, res, next) => {
-    next();
+interface UpdateOrderParams {
+    orderId: string;
+}
+
+interface UpdateOrderBody {
+    customerName: string;
+    customerAddress?: string;
+    city?: string;
+    listOfProducts: [Product?];
+    delivery: boolean;
+    deliveryPrice?: number;
+}
+
+export const updateOrder: RequestHandler<
+    UpdateOrderParams,
+    unknown,
+    UpdateOrderBody,
+    unknown
+> = async (req, res, next) => {
+    const orderId = req.params.orderId;
+
+    const customerName = req.body.customerName;
+    const customerAddress = req.body.customerAddress;
+    const city = req.body.city;
+    const listOfProducts = req.body.listOfProducts ?? [];
+    const delivery = req.body.delivery ?? false;
+    const deliveryPrice = req.body.deliveryPrice;
+
+    try {
+        if (!customerName) throw createHttpError(400, 'Invalid input, information is missing');
+
+        const order = await OrderModel.findById(orderId).exec();
+
+        if (!order) throw createHttpError(404, 'Order not found.');
+
+        order.customerName = customerName;
+        order.cutstomerAddress = customerAddress;
+        order.city = city;
+        order.listOfProducts = listOfProducts;
+        order.delivery = delivery;
+        order.deliveryPrice = deliveryPrice;
+
+        const updatedOrder = await order.save();
+
+        res.status(201).json(updatedOrder);
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const deleteOrder: RequestHandler = async (req, res, next) => {
-    next();
+    const orderId = req.params.orderId;
+
+    try {
+        const order = await OrderModel.findById(orderId).exec();
+
+        if (!order) {
+            throw createHttpError(404, 'Order not found.');
+        }
+
+        await order.deleteOne();
+
+        res.sendStatus(204);
+    } catch (error) {
+        next(error);
+    }
 };
-// Delete, update

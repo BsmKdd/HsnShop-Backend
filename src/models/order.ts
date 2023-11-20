@@ -6,15 +6,7 @@ const orderSchema = new Schema({
     customerName: { type: String, required: true },
     cutstomerAddress: { type: String },
     city: { type: String },
-    listOfProducts: [
-        {
-            name: { type: String, required: true },
-            seller: { type: String },
-            quantity: { type: Number, required: true },
-            unitPrice: { type: Number, required: true },
-            price: { type: Number, required: true },
-        },
-    ],
+    listOfProducts: { type: Array, default: [] },
     delivery: { type: Boolean, required: true, default: false },
     deliveryPrice: { type: Number },
 });
